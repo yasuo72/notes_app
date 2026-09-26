@@ -6,19 +6,32 @@ import '../widgets/category_selector_chips.dart';
 import '../widgets/character_stats_badge.dart';
 
 /// Full-screen Note Editor for creating and editing notes with live character count and form validation.
-class NoteEditorView extends StatelessWidget {
+class NoteEditorView extends StatefulWidget {
   final NoteEntity? existingNote;
 
   const NoteEditorView({super.key, this.existingNote});
 
   @override
-  Widget build(BuildContext context) {
-    // Instantiate or tag controller based on editing state
-    final controller = Get.put(
-      NoteEditorController(existingNote: existingNote),
-      tag: existingNote?.id ?? 'new_note',
-    );
+  State<NoteEditorView> createState() => _NoteEditorViewState();
+}
 
+class _NoteEditorViewState extends State<NoteEditorView> {
+  late final NoteEditorController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.put(NoteEditorController(existingNote: widget.existingNote));
+  }
+
+  @override
+  void dispose() {
+    Get.delete<NoteEditorController>();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return PopScope(
@@ -27,7 +40,7 @@ class NoteEditorView extends StatelessWidget {
         if (didPop) return;
         if (controller.hasUnsavedChanges()) {
           final discard = await _showDiscardDialog(context);
-          if (discard == true) {
+          if (discard == true && context.mounted) {
             Get.back();
           }
         } else {
@@ -42,7 +55,7 @@ class NoteEditorView extends StatelessWidget {
             onPressed: () async {
               if (controller.hasUnsavedChanges()) {
                 final discard = await _showDiscardDialog(context);
-                if (discard == true) {
+                if (discard == true && context.mounted) {
                   Get.back();
                 }
               } else {
@@ -77,7 +90,7 @@ class NoteEditorView extends StatelessWidget {
                         ? null
                         : () async {
                             final success = await controller.saveNote();
-                            if (success) {
+                            if (success && context.mounted) {
                               Get.back();
                             }
                           },
@@ -116,7 +129,7 @@ class NoteEditorView extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const CategorySelectorChips(),
+                  CategorySelectorChips(controller: controller),
                   const SizedBox(height: 12),
                   // Phase 2: Live reactive character count, word count, reading time
                   Obx(() => CharacterStatsBadge(

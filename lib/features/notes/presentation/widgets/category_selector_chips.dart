@@ -3,13 +3,15 @@ import 'package:get/get.dart';
 import '../../domain/entities/note_category.dart';
 import '../controllers/note_editor_controller.dart';
 
-/// Category selection chips inside Note Editor.
+/// Category selection chips inside Note Editor with optional direct controller injection.
 class CategorySelectorChips extends StatelessWidget {
-  const CategorySelectorChips({super.key});
+  final NoteEditorController? controller;
+
+  const CategorySelectorChips({super.key, this.controller});
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<NoteEditorController>();
+    final editorController = controller ?? Get.find<NoteEditorController>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Filter out 'all' since notes must have an actual category
@@ -35,7 +37,7 @@ class CategorySelectorChips extends StatelessWidget {
           runSpacing: 8,
           children: editableCategories.map((category) {
             return Obx(() {
-              final isSelected = controller.selectedCategory.value == category;
+              final isSelected = editorController.selectedCategory.value == category;
               final primaryColor = category.primaryColor;
 
               return ChoiceChip(
@@ -69,7 +71,7 @@ class CategorySelectorChips extends StatelessWidget {
                 ),
                 onSelected: (selected) {
                   if (selected) {
-                    controller.setCategory(category);
+                    editorController.setCategory(category);
                   }
                 },
               );
