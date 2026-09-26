@@ -1,0 +1,179 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import '../../../../core/utils/date_formatter.dart';
+import '../../../../core/utils/text_stats_helper.dart';
+import '../../domain/entities/note_entity.dart';
+import '../controllers/notes_controller.dart';
+import '../widgets/delete_confirm_bottom_sheet.dart';
+import 'note_editor_view.dart';
+
+/// Detailed reading view for an individual Note.
+class NoteDetailView extends StatelessWidget {
+  final NoteEntity note;
+
+  const NoteDetailView({super.key, required this.note});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final notesController = Get.find<NotesController>();
+
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          onPressed: () => Get.back(),
+        ),
+        actions: [
+          // Pin / Unpin
+          IconButton(
+            icon: Icon(
+              note.isPinned ? Icons.push_pin_rounded : Icons.push_pin_outlined,
+              color: note.isPinned ? note.category.primaryColor : null,
+            ),
+            tooltip: note.isPinned ? 'Unpin' : 'Pin',
+            onPressed: () {
+              notesController.togglePin(note);
+              Get.back();
+            },
+          ),
+
+          // Edit Note
+          IconButton(
+            icon: const Icon(Icons.edit_outlined),
+            tooltip: 'Edit Note',
+            onPressed: () {
+              Get.off(() => NoteEditorView(existingNote: note));
+            },
+          ),
+
+          // Delete Note
+          IconButton(
+            icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444)),
+            tooltip: 'Delete Note',
+            onPressed: () {
+              DeleteConfirmBottomSheet.show(
+                context: context,
+                note: note,
+                onConfirmDelete: () {
+                  notesController.deleteNote(note);
+                  Get.back(); // Pop detail view
+                },
+              );
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Category & Stats Row
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: note.category.primaryColor.withValues(alpha: isDark ? 0.2 : 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        note.category.icon,
+                        size: 14,
+                        color: note.category.primaryColor,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        note.category.displayName,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: note.category.primaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  TextStatsHelper.getReadingTime(note.content),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Note Title
+            Text(
+              note.title,
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    height: 1.25,
+                  ),
+            ),
+            const SizedBox(height: 12),
+
+            // Detailed Timestamp & Character Stats
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+                  ),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.access_time_rounded,
+                    size: 14,
+                    color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    DateFormatter.formatDetailed(note.updatedAt),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${note.characterCount} chars • ${note.wordCount} words',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Note Body Content
+            SelectableText(
+              note.content,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    fontSize: 16,
+                    height: 1.65,
+                    color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF1E293B),
+                  ),
+            ),
+            const SizedBox(height: 40),
+          ],
+        ),
+      ),
+    );
+  }
+}
