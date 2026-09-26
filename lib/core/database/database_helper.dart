@@ -15,6 +15,7 @@ class DatabaseHelper {
   static const String columnCategory = 'category';
   static const String columnColorValue = 'color_value';
   static const String columnIsPinned = 'is_pinned';
+  static const String columnImagePath = 'image_path';
   static const String columnCreatedAt = 'created_at';
   static const String columnUpdatedAt = 'updated_at';
 
@@ -40,6 +41,7 @@ class DatabaseHelper {
         version: _databaseVersion,
         onCreate: _onCreate,
         onConfigure: _onConfigure,
+        onOpen: _onOpen,
       );
     } catch (e, stack) {
       throw AppDatabaseException(
@@ -54,6 +56,19 @@ class DatabaseHelper {
     await db.execute('PRAGMA foreign_keys = ON');
   }
 
+  Future<void> _onOpen(Database db) async {
+    // Safely check if image_path column exists before altering to avoid duplicate column SQLite warnings
+    try {
+      final columns = await db.rawQuery('PRAGMA table_info($tableNotes)');
+      final hasColumn = columns.any((col) => col['name'] == columnImagePath);
+      if (!hasColumn) {
+        await db.execute('ALTER TABLE $tableNotes ADD COLUMN $columnImagePath TEXT');
+      }
+    } catch (_) {
+      // Safe fallback
+    }
+  }
+
   Future<void> _onCreate(Database db, int version) async {
     await db.execute('''
       CREATE TABLE $tableNotes (
@@ -63,6 +78,7 @@ class DatabaseHelper {
         $columnCategory TEXT NOT NULL,
         $columnColorValue INTEGER NOT NULL,
         $columnIsPinned INTEGER NOT NULL DEFAULT 0,
+        $columnImagePath TEXT,
         $columnCreatedAt TEXT NOT NULL,
         $columnUpdatedAt TEXT NOT NULL
       )

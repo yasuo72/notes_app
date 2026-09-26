@@ -45,5 +45,21 @@ void main() {
       final fiveMinsAgo = now.subtract(const Duration(minutes: 5));
       expect(DateFormatter.formatRelative(fiveMinsAgo), '5 mins ago');
     });
+
+    test('NoteEntity hasImage check works accurately', () {
+      final noteWithoutImage = NoteEntity(
+        id: '1',
+        title: 'Title',
+        content: 'Content',
+        category: NoteCategory.work,
+        colorValue: 0,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+      expect(noteWithoutImage.hasImage, false);
+
+      final noteWithImage = noteWithoutImage.copyWith(imagePath: '/path/to/img.png');
+      expect(noteWithImage.hasImage, true);
+    });
   });
 }

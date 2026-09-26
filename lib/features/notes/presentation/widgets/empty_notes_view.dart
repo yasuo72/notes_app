@@ -50,15 +50,18 @@ class EmptyNotesView extends StatelessWidget {
                 ),
               ),
               child: Center(
-                child: Icon(
-                  isSearchResult
-                      ? Icons.search_off_rounded
-                      : Icons.note_alt_outlined,
-                  size: 56,
-                  color: isSearchResult
-                      ? const Color(0xFFF59E0B)
-                      : Theme.of(context).primaryColor,
-                ),
+                child: isSearchResult
+                    ? const Icon(
+                        Icons.search_off_rounded,
+                        size: 56,
+                        color: Color(0xFFF59E0B),
+                      )
+                    : Image.asset(
+                        'assets/icon/app_icon.png',
+                        width: 68,
+                        height: 68,
+                        fit: BoxFit.contain,
+                      ),
               ),
             ),
             const SizedBox(height: 24),
@@ -100,7 +103,7 @@ class EmptyNotesView extends StatelessWidget {
                   ),
                 ),
               )
-            else
+            else ...[
               ElevatedButton.icon(
                 onPressed: () => Get.toNamed(AppRoutes.editor),
                 icon: const Icon(Icons.add_rounded, size: 20),
@@ -115,6 +118,16 @@ class EmptyNotesView extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(height: 12),
+              TextButton.icon(
+                onPressed: controller.seedSampleNotes,
+                icon: const Icon(Icons.auto_awesome_rounded, size: 16),
+                label: const Text('Load Sample Notes'),
+                style: TextButton.styleFrom(
+                  foregroundColor: Theme.of(context).primaryColor,
+                ),
+              ),
+            ],
           ],
         ),
       ),

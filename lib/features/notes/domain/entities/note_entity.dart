@@ -10,6 +10,7 @@ class NoteEntity {
   final NoteCategory category;
   final int colorValue;
   final bool isPinned;
+  final String? imagePath;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -20,6 +21,7 @@ class NoteEntity {
     required this.category,
     required this.colorValue,
     this.isPinned = false,
+    this.imagePath,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -42,6 +44,9 @@ class NoteEntity {
     return minutes < 1 ? 1 : minutes;
   }
 
+  /// Whether note has an image attachment.
+  bool get hasImage => imagePath != null && imagePath!.trim().isNotEmpty;
+
   /// Creates a copy of this note with modified fields.
   NoteEntity copyWith({
     String? id,
@@ -50,6 +55,7 @@ class NoteEntity {
     NoteCategory? category,
     int? colorValue,
     bool? isPinned,
+    String? imagePath,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -60,6 +66,7 @@ class NoteEntity {
       category: category ?? this.category,
       colorValue: colorValue ?? this.colorValue,
       isPinned: isPinned ?? this.isPinned,
+      imagePath: imagePath ?? this.imagePath,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -76,6 +83,7 @@ class NoteEntity {
           category == other.category &&
           colorValue == other.colorValue &&
           isPinned == other.isPinned &&
+          imagePath == other.imagePath &&
           createdAt == other.createdAt &&
           updatedAt == other.updatedAt;
 
@@ -87,6 +95,7 @@ class NoteEntity {
       category.hashCode ^
       colorValue.hashCode ^
       isPinned.hashCode ^
+      imagePath.hashCode ^
       createdAt.hashCode ^
       updatedAt.hashCode;
 }

@@ -1,5 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import '../../../../core/services/share_service.dart';
+import '../../../../core/theme/note_color_palette.dart';
 import '../../../../core/utils/date_formatter.dart';
+import '../../../../core/widgets/animated_marquee_text.dart';
 import '../../domain/entities/note_entity.dart';
 import 'delete_confirm_bottom_sheet.dart';
 
@@ -25,14 +29,12 @@ class NoteCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final category = note.category;
 
-    // Pick subtle background tint
-    final bgColor = isDark
-        ? const Color(0xFF131B2E)
-        : Colors.white;
+    // Pick subtle background tint based on user's color selection
+    final bgColor = NoteColorPalette.getBackgroundColor(note.colorValue, isDark);
 
     final borderColor = note.isPinned
-        ? category.primaryColor.withValues(alpha: 0.6)
-        : (isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0));
+        ? category.primaryColor.withValues(alpha: 0.75)
+        : NoteColorPalette.getBorderColor(note.colorValue, isDark);
 
     return Material(
       color: Colors.transparent,
@@ -72,33 +74,40 @@ class NoteCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Category Badge
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: category.primaryColor.withValues(alpha: isDark ? 0.2 : 0.12),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          category.icon,
-                          size: 12,
-                          color: category.primaryColor,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          category.displayName,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
+                  // Category Badge (Flexible to prevent right overflow)
+                  Flexible(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: category.primaryColor.withValues(alpha: isDark ? 0.2 : 0.12),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            category.icon,
+                            size: 12,
                             color: category.primaryColor,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              category.displayName,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: category.primaryColor,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
+                  const SizedBox(width: 4),
 
                   // Pin / Action Icon
                   Row(
@@ -107,6 +116,7 @@ class NoteCard extends StatelessWidget {
                       if (note.isPinned)
                         Container(
                           padding: const EdgeInsets.all(4),
+                          margin: const EdgeInsets.only(right: 2),
                           decoration: BoxDecoration(
                             color: category.primaryColor.withValues(alpha: 0.15),
                             shape: BoxShape.circle,
@@ -130,6 +140,21 @@ class NoteCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
+
+              // Attached Photo Thumbnail Preview
+              if (note.hasImage && File(note.imagePath!).existsSync()) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.file(
+                    File(note.imagePath!),
+                    height: isGridView ? 100 : 130,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
 
               // Title
               Text(
@@ -160,34 +185,69 @@ class NoteCard extends StatelessWidget {
 
               const SizedBox(height: 14),
 
-              // Footer: Date & Live Character Count (Phase 2)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    DateFormatter.formatRelative(note.updatedAt),
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+              // Footer: Live Animated Running Date & Character Count
+              Container(
+                padding: const EdgeInsets.only(top: 8),
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(
+                      color: isDark
+                          ? const Color(0xFF1E293B)
+                          : const Color(0xFFF1F5F9),
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      '${note.characterCount} ch',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                ),
+                child: Row(
+                  children: [
+                    // Live Indicator Dot
+                    Container(
+                      width: 6,
+                      height: 6,
+                      margin: const EdgeInsets.only(right: 6),
+                      decoration: BoxDecoration(
+                        color: category.primaryColor,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: category.primaryColor.withValues(alpha: 0.6),
+                            blurRadius: 4,
+                            spreadRadius: 1,
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                ],
+
+                    // Live Animated Running Date Text (scrolls left to right smoothly)
+                    Expanded(
+                      child: AnimatedMarqueeText(
+                        text: DateFormatter.formatRelative(note.updatedAt),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+
+                    // Character Count Badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '${note.characterCount} ch',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -228,6 +288,14 @@ class NoteCard extends StatelessWidget {
                 onTap: () {
                   Navigator.pop(context);
                   onTap();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.share_outlined, color: Color(0xFF3B82F6)),
+                title: const Text('Share to External Apps'),
+                onTap: () {
+                  Navigator.pop(context);
+                  ShareService.shareNote(note);
                 },
               ),
               ListTile(

@@ -30,4 +30,33 @@ class StorageService {
   Future<bool> setGridView(bool value) async {
     return await _prefs.setBool(_keyGridView, value);
   }
+
+  static const String _keySampleSeeded = 'has_seeded_sample_notes';
+
+  /// Whether initial sample data was already populated.
+  bool get hasSeededSampleNotes => _prefs.getBool(_keySampleSeeded) ?? false;
+
+  /// Marks sample data as seeded.
+  Future<bool> setHasSeededSampleNotes(bool value) async {
+    return await _prefs.setBool(_keySampleSeeded, value);
+  }
+
+  static const String _keyNoteFont = 'note_font_family';
+  static const String _keyNoteFontSize = 'note_font_size';
+
+  /// Preferred font family for notes. Defaults to 'Inter'.
+  String get noteFontFamily => _prefs.getString(_keyNoteFont) ?? 'Inter';
+
+  /// Persists preferred font family.
+  Future<bool> setNoteFontFamily(String value) async {
+    return await _prefs.setString(_keyNoteFont, value);
+  }
+
+  /// Preferred font size for note writing. Defaults to 16.0.
+  double get noteFontSize => _prefs.getDouble(_keyNoteFontSize) ?? 16.0;
+
+  /// Persists preferred font size.
+  Future<bool> setNoteFontSize(double value) async {
+    return await _prefs.setDouble(_keyNoteFontSize, value);
+  }
 }

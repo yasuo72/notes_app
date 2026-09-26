@@ -9,6 +9,7 @@ class NoteModel {
   final String category;
   final int colorValue;
   final int isPinned;
+  final String? imagePath;
   final String createdAt;
   final String updatedAt;
 
@@ -19,6 +20,7 @@ class NoteModel {
     required this.category,
     required this.colorValue,
     required this.isPinned,
+    this.imagePath,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -32,6 +34,7 @@ class NoteModel {
       category: map['category'] as String,
       colorValue: map['color_value'] as int,
       isPinned: (map['is_pinned'] as int?) ?? 0,
+      imagePath: map['image_path'] as String?,
       createdAt: map['created_at'] as String,
       updatedAt: map['updated_at'] as String,
     );
@@ -46,6 +49,7 @@ class NoteModel {
       'category': category,
       'color_value': colorValue,
       'is_pinned': isPinned,
+      'image_path': imagePath,
       'created_at': createdAt,
       'updated_at': updatedAt,
     };
@@ -60,6 +64,7 @@ class NoteModel {
       category: entity.category.value,
       colorValue: entity.colorValue,
       isPinned: entity.isPinned ? 1 : 0,
+      imagePath: entity.imagePath,
       createdAt: entity.createdAt.toIso8601String(),
       updatedAt: entity.updatedAt.toIso8601String(),
     );
@@ -74,6 +79,7 @@ class NoteModel {
       category: NoteCategory.fromString(category),
       colorValue: colorValue,
       isPinned: isPinned == 1,
+      imagePath: imagePath,
       createdAt: DateTime.tryParse(createdAt) ?? DateTime.now(),
       updatedAt: DateTime.tryParse(updatedAt) ?? DateTime.now(),
     );

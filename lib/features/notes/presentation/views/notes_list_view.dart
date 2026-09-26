@@ -22,6 +22,7 @@ class NotesListView extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               padding: const EdgeInsets.all(6),
@@ -35,15 +36,18 @@ class NotesListView extends StatelessWidget {
                 size: 20,
               ),
             ),
-            const SizedBox(width: 10),
-            const Text(
-              'My Notes',
-              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 22),
-            ),
             const SizedBox(width: 8),
+            const Flexible(
+              child: Text(
+                'My Notes',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 6),
             // Live Total Note Count Badge
             Obx(() => Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                   decoration: BoxDecoration(
                     color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                     borderRadius: BorderRadius.circular(12),
@@ -54,7 +58,7 @@ class NotesListView extends StatelessWidget {
                   child: Text(
                     '${notesController.filteredNotes.length}',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 11,
                       fontWeight: FontWeight.w700,
                       color: Theme.of(context).primaryColor,
                     ),
@@ -97,7 +101,43 @@ class NotesListView extends StatelessWidget {
                     : 'Switch to Grid View',
                 onPressed: notesController.toggleViewMode,
               )),
-          const SizedBox(width: 6),
+
+          // More Options Menu (Load 10 Sample Notes / Refresh)
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert_rounded),
+            tooltip: 'Options',
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            onSelected: (value) {
+              if (value == 'seed') {
+                notesController.seedSampleNotes();
+              } else if (value == 'refresh') {
+                notesController.fetchNotes();
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'seed',
+                child: Row(
+                  children: [
+                    Icon(Icons.auto_awesome_rounded, size: 18, color: Color(0xFFF59E0B)),
+                    SizedBox(width: 10),
+                    Text('Load 20 Sample Notes'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'refresh',
+                child: Row(
+                  children: [
+                    Icon(Icons.refresh_rounded, size: 18),
+                    SizedBox(width: 10),
+                    Text('Refresh All'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 4),
         ],
       ),
       body: RefreshIndicator(

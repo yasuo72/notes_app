@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../core/constants/sample_notes_data.dart';
 import '../../../../core/errors/app_exception.dart';
 import '../../../../core/services/storage_service.dart';
 import '../../domain/entities/note_category.dart';
@@ -62,11 +63,51 @@ class NotesController extends GetxController {
     errorMessage.value = null;
 
     try {
-      final fetched = await _repository.getAllNotes();
+      var fetched = await _repository.getAllNotes();
+
+      // Automatically populate realistic sample notes on first run if DB is empty
+      if (fetched.isEmpty && !_storageService.hasSeededSampleNotes) {
+        for (final sample in SampleNotesData.getInitialSampleNotes()) {
+          await _repository.createNote(sample);
+        }
+        await _storageService.setHasSeededSampleNotes(true);
+        fetched = await _repository.getAllNotes();
+      }
+
       _allNotes.assignAll(fetched);
       _applyFilter();
     } catch (e) {
       errorMessage.value = e is AppException ? e.message : 'Failed to load notes. Please retry.';
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /// Manually restores or populates sample notes.
+  Future<void> seedSampleNotes() async {
+    isLoading.value = true;
+    try {
+      for (final sample in SampleNotesData.getInitialSampleNotes()) {
+        await _repository.createNote(sample);
+      }
+      await _storageService.setHasSeededSampleNotes(true);
+      final fetched = await _repository.getAllNotes();
+      _allNotes.assignAll(fetched);
+      _applyFilter();
+
+      Get.snackbar(
+        'Sample Notes Added',
+        'Added ${SampleNotesData.getInitialSampleNotes().length} sample notes across all categories.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: const Color(0xFF1E293B),
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+        margin: const EdgeInsets.all(16),
+        borderRadius: 12,
+        icon: const Icon(Icons.auto_awesome_rounded, color: Color(0xFFF59E0B)),
+      );
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to seed sample notes: $e');
     } finally {
       isLoading.value = false;
     }
